@@ -41,82 +41,81 @@ app.post('/', async (req, res) => {
             return res.status(404).json({ error: 'No public repositories found for this user.' });
         }
 
-        // 1. Criar uma pasta temporária dentro da raiz do projeto
+        // Create a temporary folder inside the root of the project.
         const tempDirPath = path.join(__dirname, 'temp');
         if (!fs.existsSync(tempDirPath)) {
             fs.mkdirSync(tempDirPath);
         }
 
-        // 2. Clonar todos os repositórios na pasta temporária
+        // Clone all the repositories into the temporary folder.
         for (const repo of repos) {
             const repoUrl = repo.clone_url;
             const repoName = repo.name;
             const cloneDir = path.join(tempDirPath, repoName);
 
             if (!fs.existsSync(cloneDir)) {
-                console.log(`Clonando o repositório ${repoName}...`);
+                console.log(`Cloning the repository ${repoName}...`);
                 await git.clone(repoUrl, cloneDir);
-                console.log(`Repositório ${repoName} clonado com sucesso.`);
+                console.log(`Repository ${repoName} cloned successfully.`);
             } else {
-                console.log(`Repositório ${repoName} já clonado.`);
+                console.log(`Repository ${repoName} already cloned.`);
             }
         }
 
-        // 3. Criar o arquivo ZIP com os repositórios clonados (ou todas as pastas dentro da pasta temp)
+        // Create the ZIP file with the cloned repositories.
         const zipFilePath = path.join(__dirname, `${user}_repos.zip`);
         const output = fs.createWriteStream(zipFilePath);
         const archive = archiver('zip', { zlib: { level: 9 } });
 
-        // Conectar o arquivo ZIP ao stream de saída
+        // Connect the ZIP file to the output stream.
         archive.pipe(output);
 
-        // Ler todas as pastas dentro da pasta temp
+        // Read all the folders inside the temp folder.
         fs.readdirSync(tempDirPath).forEach((item) => {
             const fullPath = path.join(tempDirPath, item);
 
-            // Verificar se é uma pasta (não um arquivo)
+            // Check if it is a folder (not a file).
             if (fs.statSync(fullPath).isDirectory()) {
                 archive.directory(fullPath, item); // Adiciona a pasta ao arquivo ZIP
             }
         });
 
-        // Finalizar a criação do ZIP
         archive.finalize();
 
-        // Quando o ZIP for gerado, enviar o arquivo para o frontend
+        // When the ZIP is generated, send the file to the frontend.
         output.on('close', () => {
             res.setHeader('Content-Disposition', `attachment; filename=${user}_repos.zip`);
             res.download(zipFilePath, `${user}_repos.zip`, (err) => {
                 if (err) {
-                    console.error('Erro ao enviar o arquivo ZIP:', err);
-                    return res.status(500).json({ error: 'Erro ao enviar o arquivo ZIP' });
+                    console.error('Error while sending the ZIP file:', err);
+                    return res.status(500).json({ error: 'Error while sending the ZIP file:' });
                 }
 
                 fsPromises.rm(tempDirPath, { recursive: true })
                     .then(() => {
-                        console.log('Pasta temporária excluída com sucesso.');
+                        console.log('Temporary folder deleted successfully.');
                     })
                     .catch(err => {
-                        console.error('Erro ao excluir a pasta temporária:', err);
+                        console.error('Error deleting the temporary folder:', err);
                     });
             });
         });
 
-        // 5. Configurar timeout para excluir o arquivo ZIP após 1 minuto
+        // Set a timeout to delete the ZIP file after 2 minutes.
         setTimeout(() => {
             fsPromises.rm(zipFilePath, { force: true })
                 .then(() => {
-                    console.log(`Arquivo ZIP ${zipFilePath} excluído após 1 minuto.`);
+                    console.log(`ZIP file ${zipFilePath} deleted after 2 minutes.`);
                 })
                 .catch(err => {
-                    console.error('Erro ao excluir o arquivo ZIP após 1 minuto:', err);
+                    console.error('Error deleting the ZIP file after 2 minutes.', err);
                 });
-        }, 60000); // 60000 ms = 1 minuto
+        }, 120000); // 60000 ms = 1 minute
 
 
     } catch (error) {
-        console.error('Erro ao clonar os repositórios:', error);
-        res.status(500).json({ error: 'Erro ao clonar os repositórios' });
+        console.error('Error cloning the repositories:', error);
+        res.status(500).json({ error: 'Error cloning the repositories.' });
     }
 });
 
