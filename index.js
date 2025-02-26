@@ -5,9 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const axios = require('axios');
 const archiver = require('archiver');
-const rimraf = require('rimraf');
 const cors = require('cors');
-
 
 const app = express();
 const git = simpleGit();
@@ -16,7 +14,6 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Função para buscar repositórios públicos no GitHub
 const getPublicRepos = async (user) => {
     try {
         const response = await axios.get(`https://api.github.com/users/${user}/repos?type=public&per_page=100`);
@@ -26,7 +23,6 @@ const getPublicRepos = async (user) => {
     }
 };
 
-// Rota para clonar os repositórios e gerar o arquivo ZIP
 app.post('/', async (req, res) => {
     const { user } = req.body;
 
