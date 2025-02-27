@@ -1,12 +1,9 @@
 {
   "dependencies": {
-    "archiver": "^7.0.1",
     "axios": "^1.7.9",
     "cors": "^2.8.5",
     "express": "^4.21.2",
-    "rimraf": "^6.0.1",
-    "simple-git": "^3.27.0",
-    "tmp": "^0.2.3"
+    "simple-git": "^3.27.0"
   },
   "name": "clone-all-repos-server",
   "version": "1.0.0",
